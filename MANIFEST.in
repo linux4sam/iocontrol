@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include LICENSE.MIT
+include Makefile
+include pylintrc
+include iocontrol/*.ui
+include iocontrol/*.qss
