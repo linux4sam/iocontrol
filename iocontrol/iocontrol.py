@@ -71,7 +71,8 @@ class AsyncHandler(QThread):
         while not self.stopped():
             value = self._function()
             if value is not None:
-                self.event.emit(value)
+                if self.event is not None:
+                    self.event.emit(value)
             if self.delay is not None:
                 time.sleep(self.delay)
 
