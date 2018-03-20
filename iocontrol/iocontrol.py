@@ -310,36 +310,52 @@ class MainWindow(QMainWindow):
 
         for pin in range(0, 160):
             tab.scrollLayout.addRow(GPIOWidget(pin))
+            QApplication.instance().processEvents()
 
     def setupLEDTab(self, tab):
         self.setupDefaultTabLayout(tab)
 
+        found = False
         leds = mpio.LED.enumerate()
         for name in leds:
             led = mpio.LED(name)
             tab.scrollLayout.addRow(QLabel(led.name), LEDWidget(led))
+            found = True
+
+        if not found:
+            tab.scrollLayout.addRow(QLabel("No LED found"))
 
     def setupADCTab(self, tab):
         self.setupDefaultTabLayout(tab)
 
+        found = False
         devices = mpio.ADC.enumerate()
         for device in devices:
             adc = mpio.ADC(device)
             channels = adc.available_channels
             for channel in channels:
+                found = True
                 tab.scrollLayout.addRow(ADCWidget(adc, channel))
+
+        if not found:
+            tab.scrollLayout.addRow(QLabel("No ADC channels found"))
 
     def setupPWMTab(self, tab):
         self.setupDefaultTabLayout(tab)
 
+        found = False
         chips = mpio.PWM.enumerate()
         for chip in chips:
             for channel in range(mpio.PWM.num_channels(chip)):
                 try:
                     pwm = mpio.PWM(chip, channel, enable=False, force_own=True)
                     tab.scrollLayout.addRow(PWMWidget(pwm))
+                    found = True
                 except:
                     pass
+
+        if not found:
+            tab.scrollLayout.addRow(QLabel("No PWM channels found"))
 
 def excepthook(exc_type, exc_value, traceback_obj):
     separator = '-' * 80
