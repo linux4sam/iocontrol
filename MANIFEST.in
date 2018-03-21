@@ -5,3 +5,4 @@ include Makefile
 include pylintrc
 include iocontrol/*.ui
 include iocontrol/*.qss
+include iocontrol/loading.png

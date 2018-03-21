@@ -21,28 +21,24 @@
 """
 PyQt demo application using mpio to control and view hardware peripherals.
 """
+
 from . import __version__
-import argparse
-import sys
-import os
-import signal
-import time
-import threading
+from .pyqt5_style_rc import *
+from PyQt5 import uic
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QFormLayout
+from PyQt5.QtWidgets import QHBoxLayout, QRadioButton, QCheckBox, QGroupBox
+from PyQt5.QtWidgets import QScrollArea, QVBoxLayout, QLabel, QSlider
+from PyQt5.QtWidgets import QSplashScreen, QMessageBox
 from functools import partial
+from mpio import GPIO, LED, ADC, PWM
+from os import path
+from signal import signal, SIGINT, SIG_DFL
+from threading import Event
+from time import sleep, strftime
+import sys
 
-try:
-    from PyQt4.QtGui import *
-    from PyQt4.QtCore import *
-    from PyQt4 import uic
-    from .pyqt_style_rc import *
-except:
-    from PyQt5.QtGui import *
-    from PyQt5.QtWidgets import *
-    from PyQt5.QtCore import *
-    from PyQt5 import uic
-    from .pyqt5_style_rc import *
-
-import mpio
 
 def readonly(widget, state):
     """Special definition of setting a widget to readonly, without graying it out.
@@ -61,7 +57,7 @@ class AsyncHandler(QThread):
         super(AsyncHandler, self).__init__()
         self.delay = delay
         self._function = function
-        self._stop_event = threading.Event()
+        self._stop_event = Event()
         self._stop_event.set()
 
     def start(self):
@@ -75,7 +71,7 @@ class AsyncHandler(QThread):
                 if self.event is not None:
                     self.event.emit(value)
             if self.delay is not None:
-                time.sleep(self.delay)
+                sleep(self.delay)
 
     def stopped(self):
         return self._stop_event.is_set()
@@ -124,7 +120,7 @@ class GPIOWidget(QWidget):
         self.handler = None
         self.gpio = None
         self.pin = pin
-        self.label = QLabel(mpio.GPIO.pin_to_name(pin))
+        self.label = QLabel(GPIO.pin_to_name(pin))
         self.none = QRadioButton()
         self.none.setChecked(True)
         self.input = QRadioButton()
@@ -160,13 +156,13 @@ class GPIOWidget(QWidget):
             self.handler.stop()
         if self.gpio is not None:
             self.gpio.close()
-        self.gpio = mpio.GPIO(self.pin, mpio.GPIO.OUT, force_own=True)
+        self.gpio = GPIO(self.pin, GPIO.OUT, force_own=True)
 
     def setInput(self):
         readonly(self.state, True)
         if self.gpio is not None:
             self.gpio.close()
-        self.gpio = mpio.GPIO(self.pin, mpio.GPIO.IN, force_own=True)
+        self.gpio = GPIO(self.pin, GPIO.IN, force_own=True)
         self.state.setChecked(self.gpio.get())
         if self.gpio.interrupts_available:
             self.handler = AsyncHandler(function=partial(self.gpio.poll, timeout=0.5))
@@ -175,7 +171,7 @@ class GPIOWidget(QWidget):
 
     def setValue(self, value):
         if self.gpio:
-            if self.gpio.mode == mpio.GPIO.OUT:
+            if self.gpio.mode == GPIO.OUT:
                 self.gpio.set(value)
 
     def onValueChange(self, value):
@@ -190,6 +186,7 @@ class ADCWidget(QWidget):
     def __init__(self, adc, channel, parent=None):
         super(ADCWidget, self).__init__(parent)
 
+        self.handler = None
         self.adc = adc
         self.channel = channel
         group = QGroupBox("ADC {}, Channel {}".format(adc.device, self.channel), self)
@@ -277,7 +274,7 @@ class PWMWidget(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        uic.loadUi(os.path.join(os.path.dirname(__file__), 'iocontrol.ui'), self)
+        uic.loadUi(path.join(path.dirname(__file__), 'iocontrol.ui'), self)
 
         self.tabs.currentChanged.connect(self.handleQuit)
 
@@ -320,9 +317,9 @@ class MainWindow(QMainWindow):
         self.setupDefaultTabLayout(tab)
 
         found = False
-        leds = mpio.LED.enumerate()
+        leds = LED.enumerate()
         for name in leds:
-            led = mpio.LED(name)
+            led = LED(name)
             tab.scrollLayout.addRow(QLabel(led.name), LEDWidget(led))
             found = True
 
@@ -333,9 +330,9 @@ class MainWindow(QMainWindow):
         self.setupDefaultTabLayout(tab)
 
         found = False
-        devices = mpio.ADC.enumerate()
+        devices = ADC.enumerate()
         for device in devices:
-            adc = mpio.ADC(device)
+            adc = ADC(device)
             channels = adc.available_channels
             for channel in channels:
                 found = True
@@ -348,11 +345,11 @@ class MainWindow(QMainWindow):
         self.setupDefaultTabLayout(tab)
 
         found = False
-        chips = mpio.PWM.enumerate()
+        chips = PWM.enumerate()
         for chip in chips:
-            for channel in range(mpio.PWM.num_channels(chip)):
+            for channel in range(PWM.num_channels(chip)):
                 try:
-                    pwm = mpio.PWM(chip, channel, enable=False, force_own=True)
+                    pwm = PWM(chip, channel, enable=False, force_own=True)
                     tab.scrollLayout.addRow(PWMWidget(pwm))
                     found = True
                 except:
@@ -365,7 +362,7 @@ def excepthook(exc_type, exc_value, traceback_obj):
     separator = '-' * 80
     notice = "An unhandled exception occurred:\n"
     version_info = '\n'.join((separator, "Version: %s" % __version__))
-    time_string = time.strftime("%Y-%m-%d, %H:%M:%S")
+    time_string = strftime("%Y-%m-%d, %H:%M:%S")
     errmsg = '%s: \n%s' % (str(exc_type), str(exc_value))
     sections = [separator, time_string, separator, errmsg, separator]
     msg = '\n'.join(sections)
@@ -375,16 +372,23 @@ def excepthook(exc_type, exc_value, traceback_obj):
     errorbox.exec_()
 
 def main():
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal(SIGINT, SIG_DFL)
     app = QApplication(sys.argv)
     sys.excepthook = excepthook
 
-    with open(os.path.join(os.path.dirname(__file__), "style.qss"), 'r') as f:
+    splash_pix = QPixmap(path.join(path.dirname(__file__), 'loading.png'))
+    splash = QSplashScreen(splash_pix)
+    splash.show()
+    splash.raise_()
+    app.processEvents()
+
+    with open(path.join(path.dirname(__file__), "style.qss"), 'r') as f:
         app.setStyleSheet(f.read())
 
     win = MainWindow()
 
-    parser = argparse.ArgumentParser(description='Microchip Peripheral I/O Control')
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description='Microchip Peripheral I/O Control')
     parser.add_argument('--fullscreen', dest='fullscreen', action='store_true',
                         help='show the main window in fullscreen')
     parser.set_defaults(fullscreen=False)
@@ -398,6 +402,8 @@ def main():
     else:
         win.show()
     win.setFocus()
+
+    splash.finish(win)
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
