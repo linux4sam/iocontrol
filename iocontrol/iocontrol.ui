@@ -36,13 +36,6 @@
     <property name="margin">
      <number>0</number>
     </property>
-    <item row="1" column="0">
-     <widget class="QPushButton" name="btn_exit">
-      <property name="text">
-       <string>Exit</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabs">
       <property name="font">
@@ -57,7 +50,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -65,26 +58,6 @@
       <property name="usesScrollButtons">
        <bool>false</bool>
       </property>
-      <widget class="QWidget" name="tab_led">
-       <attribute name="title">
-        <string>LED</string>
-       </attribute>
-      </widget>
-      <widget class="QWidget" name="tab_gpio">
-       <attribute name="title">
-        <string>GPIO</string>
-       </attribute>
-      </widget>
-      <widget class="QWidget" name="tab_adc">
-       <attribute name="title">
-        <string>ADC</string>
-       </attribute>
-      </widget>
-      <widget class="QWidget" name="tab_pwm">
-       <attribute name="title">
-        <string>PWM</string>
-       </attribute>
-      </widget>
       <widget class="QWidget" name="tab">
        <attribute name="title">
         <string>About</string>
@@ -110,6 +83,31 @@ Supported interface classes include ADC, GPIO, I2C, SMBus, Input, LED, PWM, and 
          </widget>
         </item>
        </layout>
+      </widget>
+      <widget class="QWidget" name="tab_led">
+       <attribute name="title">
+        <string>LED</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_gpio">
+       <attribute name="title">
+        <string>GPIO</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_adc">
+       <attribute name="title">
+        <string>ADC</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_pwm">
+       <attribute name="title">
+        <string>PWM</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_quit">
+       <attribute name="title">
+        <string>Quit</string>
+       </attribute>
       </widget>
      </widget>
     </item>

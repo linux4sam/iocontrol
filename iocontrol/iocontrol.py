@@ -279,12 +279,16 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         uic.loadUi(os.path.join(os.path.dirname(__file__), 'iocontrol.ui'), self)
 
-        self.btn_exit.clicked.connect(self.close)
+        self.tabs.currentChanged.connect(self.handleQuit)
 
         self.setupLEDTab(self.tab_led)
         self.setupGPIOTab(self.tab_gpio)
         self.setupADCTab(self.tab_adc)
         self.setupPWMTab(self.tab_pwm)
+
+    def handleQuit(self, index):
+        if index == 5:
+            self.close()
 
     def setupDefaultTabLayout(self, tab):
         tab.scrollLayout = QFormLayout()
