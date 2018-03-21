@@ -21,6 +21,7 @@
 """
 PyQt demo application using mpio to control and view hardware peripherals.
 """
+from . import __version__
 import argparse
 import sys
 import os
@@ -343,7 +344,7 @@ class MainWindow(QMainWindow):
 def excepthook(exc_type, exc_value, traceback_obj):
     separator = '-' * 80
     notice = "An unhandled exception occurred:\n"
-    version_info = '\n'.join((separator, "Version: %s" % _version))
+    version_info = '\n'.join((separator, "Version: %s" % __version__))
     time_string = time.strftime("%Y-%m-%d, %H:%M:%S")
     errmsg = '%s: \n%s' % (str(exc_type), str(exc_value))
     sections = [separator, time_string, separator, errmsg, separator]
